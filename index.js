@@ -12,7 +12,7 @@ dns.setServers(["1.1.1.1" ,"8.8.8.8"]);
 
 async function ConnectDB() {
   try {
-    await mongoose.connect(process.env.
+    await mongoose.connect(process.env.  
       MONGODB_URL);
       console.log(" MongoDB connected");
   } catch (error) {
