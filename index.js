@@ -7,11 +7,12 @@ import dotenv from "dotenv";
 dotenv.config();
 const app = express();
 
-// Database Connection
+// Direct fallback URL taakay env missing hone par server crash na ho
+const MONGO_URI = process.env.MONGODB_URL || "mongodb+srv://admin:RgVQFeVvzuoooSOU@cluster0.n4qkvcw.mongodb.net/?retryWrites=true&w=majority";
+
 async function ConnectDB() {
   try {
-    const mongoURI = process.env.MONGODB_URL ? process.env.MONGODB_URL.trim() : "";
-    await mongoose.connect(mongoURI);
+    await mongoose.connect(MONGO_URI);
     console.log("MongoDB connected successfully");
   } catch (error) {
     console.error("MongoDB connection error:", error);
@@ -20,7 +21,6 @@ async function ConnectDB() {
 
 ConnectDB();
 
-// Open CORS for all routes and preflight requests
 app.use(cors());
 app.options("*", cors());
 app.use(express.json());
@@ -88,7 +88,6 @@ app.put("/products/:id", async (req, res) => {
   }
 });
 
-// PORT Config
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
