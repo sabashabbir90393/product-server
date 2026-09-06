@@ -3,17 +3,16 @@ import Product from "./model/Product.js";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import dns from "node:dns/promises";
 
 dotenv.config();
 const app = express();
 
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
-
+// Database Connection
 async function ConnectDB() {
   try {
-    await mongoose.connect(process.env.MONGODB_URL);
-    console.log("MongoDB connected");
+    const mongoURI = process.env.MONGODB_URL ? process.env.MONGODB_URL.trim() : "";
+    await mongoose.connect(mongoURI);
+    console.log("MongoDB connected successfully");
   } catch (error) {
     console.error("MongoDB connection error:", error);
   }
@@ -21,22 +20,16 @@ async function ConnectDB() {
 
 ConnectDB();
 
-// FIX 1: Allow all origins so Netlify & Localhost both work seamlessly
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
+// Open CORS for all routes and preflight requests
+app.use(cors());
+app.options("*", cors());
 app.use(express.json());
 
 // GET PRODUCTS
 app.get("/products", async (req, res) => {
   try {
     const products = await Product.find();
-    res.json(products);
+    res.status(200).json(products);
   } catch (error) {
     res.status(500).json({ message: "Error fetching products" });
   }
@@ -54,24 +47,22 @@ app.post("/products", async (req, res) => {
   }
 });
 
-// DELETE PRODUCT (FIX 2: Handles both Mongoose _id and custom id)
+// DELETE PRODUCT
 app.delete("/products/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    
     if (mongoose.Types.ObjectId.isValid(id)) {
       await Product.findByIdAndDelete(id);
     } else {
       await Product.findOneAndDelete({ id });
     }
-
-    res.status(200).json({ message: "Product deleted successfully" });
+    res.status(200).json({ message: "Deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting product" });
   }
 });
 
-// PUT PRODUCT (FIX 3: Handles both Mongoose _id and custom id)
+// PUT PRODUCT
 app.put("/products/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -91,15 +82,14 @@ app.put("/products/:id", async (req, res) => {
         { new: true }
       );
     }
-
     res.status(200).json(updatedProduct);
   } catch (error) {
     res.status(500).json({ message: "Error updating product" });
   }
 });
 
-// Dynamic Port for Railway Deployment
+// PORT Config
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
